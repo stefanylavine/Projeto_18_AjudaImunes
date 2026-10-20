@@ -1,125 +1,205 @@
-# Ajuda Imunes AI Coder - Criando Seu Assistente de Programação Python, em Python
 
-# Importa módulo para interagir com o sistema operacional
+import os
+import streamlit as st
+from groq import Groq
 
+# ==========================================
+# CONFIGURAÇÃO DA PÁGINA
+# ==========================================
 
-# Importa a biblioteca Streamlit para criar a interface web interativa
+st.set_page_config(
+    page_title="Ajuda Imunes AI Coder",
+    page_icon="🤖",
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
 
+# ==========================================
+# PROMPT DO ASSISTENTE
+# ==========================================
 
-# Importa a classe Groq para se conectar à API da plataforma Groq e acessar o LLM
-
-
-# Configura a página do Streamlit com título, ícone, layout e estado inicial da sidebar
-
-
-# Define um prompt de sistema que descreve as regras e comportamento do assistente de IA
 CUSTOM_PROMPT = """
-Você é o "Ajuda Imunes AI Coder", um assistente de IA especialista em programação, com foco principal em Python. Sua missão é ajudar desenvolvedores iniciantes com dúvidas de programação de forma clara, precisa e útil.
+Você é o Ajuda Imunes AI Coder, um assistente especializado
+em programação, principalmente em Python.
 
-REGRAS DE OPERAÇÃO:
-1.  **Foco em Programação**: Responda apenas a perguntas relacionadas a programação, algoritmos, estruturas de dados, bibliotecas e frameworks. Se o usuário perguntar sobre outro assunto, responda educadamente que seu foco é exclusivamente em auxiliar com código.
-2.  **Estrutura da Resposta**: Sempre formate suas respostas da seguinte maneira:
-    * **Explicação Clara**: Comece com uma explicação conceitual sobre o tópico perguntado. Seja direto e didático.
-    * **Exemplo de Código**: Forneça um ou mais blocos de código em Python com a sintaxe correta. O código deve ser bem comentado para explicar as partes importantes.
-    * **Detalhes do Código**: Após o bloco de código, descreva em detalhes o que cada parte do código faz, explicando a lógica e as funções utilizadas.
-    * **Documentação de Referência**: Ao final, inclua uma seção chamada "📚 Documentação de Referência" com um link direto e relevante para a documentação oficial da Linguagem Python (docs.python.org) ou da biblioteca em questão.
-3.  **Clareza e Precisão**: Use uma linguagem clara. Evite jargões desnecessários. Suas respostas devem ser tecnicamente precisas.
+Sua missão é ajudar iniciantes com explicações claras,
+precisas e didáticas.
+
+REGRAS:
+
+1. Responda apenas sobre programação, algoritmos,
+estruturas de dados, bibliotecas e frameworks.
+
+2. Organize as respostas com:
+- Explicação clara do conceito.
+- Exemplo de código Python comentado.
+- Explicação das principais partes do código.
+- Documentação oficial relevante.
+
+3. Utilize linguagem simples e objetiva.
+
+4. Se a pergunta não for sobre programação,
+explique educadamente qual é o foco do assistente.
+
+5. Inclua links para documentações oficiais
+sempre que forem relevantes.
 """
 
-# Cria o conteúdo da barra lateral no Streamlit
+# ==========================================
+# BARRA LATERAL
+# ==========================================
 
-    
-    # Define o título da barra lateral
- 
-    
-    # Mostra um texto explicativo sobre o assistente
+with st.sidebar:
+    st.title("🤖 Ajuda Imunes AI Coder")
 
-    
-    # Campo para inserir a chave de API da Groq
+    st.markdown(
+        "Seu assistente de inteligência artificial "
+        "para aprender programação Python."
+    )
 
+    st.markdown("---")
 
-    # Adiciona linhas divisórias e explicações extras na barra lateral
+    groq_api_key = st.text_input(
+        "🔑 Chave da API Groq",
+        type="password",
+        value=os.getenv("GROQ_API_KEY", ""),
+        help="Obtenha sua chave em https://console.groq.com/keys"
+    )
 
+    st.markdown("---")
 
+    st.info(
+        "💡 Utilize o assistente para aprender, "
+        "resolver dúvidas e compreender códigos."
+    )
 
+    st.caption(
+        "A IA pode cometer erros. "
+        "Verifique as respostas e a documentação."
+    )
 
-  
-# Título principal do app
+# ==========================================
+# TÍTULO PRINCIPAL
+# ==========================================
 
+st.title("🐍 Ajuda Imunes AI Coder")
 
-# Subtítulo adicional
+st.subheader("Seu assistente pessoal de programação")
 
+st.caption(
+    "Faça perguntas sobre Python e receba exemplos, "
+    "explicações e referências."
+)
 
-# Texto auxiliar abaixo do título
+st.markdown("---")
 
+# ==========================================
+# HISTÓRICO DE CONVERSAS
+# ==========================================
 
-# Inicializa o histórico de mensagens na sessão, caso ainda não exista
+if "messages" not in st.session_state:
+    st.session_state.messages = []
 
+# Exibe as mensagens anteriores
+for message in st.session_state.messages:
+    with st.chat_message(message["role"]):
+        st.markdown(message["content"])
 
-# Exibe todas as mensagens anteriores armazenadas no estado da sessão
+# ==========================================
+# CONEXÃO COM A API GROQ
+# ==========================================
 
+client = None
 
-# Inicializa a variável do cliente Groq como None
+if groq_api_key:
+    try:
+        client = Groq(api_key=groq_api_key)
+    except Exception as e:
+        st.sidebar.error(
+            f"Erro ao inicializar o cliente Groq: {e}"
+        )
 
+# ==========================================
+# CHAT COM INTELIGÊNCIA ARTIFICIAL
+# ==========================================
 
-# Verifica se o usuário forneceu a chave de API da Groq
+prompt = st.chat_input("💬 Qual é sua dúvida sobre Python?")
 
-        # Cria cliente Groq com a chave de API fornecida
+if prompt:
+    if not client:
+        st.warning(
+            "Insira uma chave válida da API Groq "
+            "na barra lateral para começar."
+        )
+    else:
+        # Salva e exibe a pergunta do usuário
+        st.session_state.messages.append(
+            {"role": "user", "content": prompt}
+        )
 
+        with st.chat_message("user"):
+            st.markdown(prompt)
 
-        
-        # Exibe erro caso haja problema ao inicializar cliente
+        # Prepara o histórico enviado à API
+        messages_for_api = [
+            {"role": "system", "content": CUSTOM_PROMPT}
+        ]
 
+        messages_for_api.extend(
+            st.session_state.messages
+        )
 
-# Caso não tenha chave, mas já existam mensagens, mostra aviso
+        # Gera a resposta da inteligência artificial
+        with st.chat_message("assistant"):
+            with st.spinner("Analisando sua pergunta..."):
+                try:
+                    chat_completion = client.chat.completions.create(
+                        messages=messages_for_api,
+                        model="openai/gpt-oss-20b",
+                        temperature=0.7,
+                        max_tokens=2048
+                    )
 
-# Captura a entrada do usuário no chat
+                    resposta = (
+                        chat_completion.choices[0].message.content
+                    )
 
-    
-    # Se não houver cliente válido, mostra aviso e para a execução
+                    if not resposta:
+                        resposta = "Não foi possível gerar uma resposta."
 
-    # Armazena a mensagem do usuário no estado da sessão
+                    st.markdown(resposta)
 
-    
-    # Exibe a mensagem do usuário no chat
+                    # Salva a resposta no histórico
+                    st.session_state.messages.append(
+                        {
+                            "role": "assistant",
+                            "content": resposta
+                        }
+                    )
 
+                except Exception as e:
+                    st.error(
+                        "Ocorreu um erro ao se comunicar "
+                        f"com a API da Groq: {e}"
+                    )
 
-    # Prepara mensagens para enviar à API, incluindo prompt de sistema
+# ==========================================
+# RODAPÉ
+# ==========================================
 
-        
-
-
-    # Cria a resposta do assistente no chat
-
-        
-        
-                
-                # Chama a API da Groq para gerar a resposta do assistente
-
-                
-                # Extrai a resposta gerada pela API
-
-                
-                # Exibe a resposta no Streamlit
-           
-                
-                # Armazena resposta do assistente no estado da sessão
-          
-
-            # Caso ocorra erro na comunicação com a API, exibe mensagem de erro
-          
+st.markdown("---")
 
 st.markdown(
     """
     <div style="text-align: center; color: gray;">
-        <hr>
-        <p>Ajuda Imunes AI Coder - Feito para ajudar os imunes ao conhecimento a pelo menos tentar obter um pouco mais de conhecimento</p>
+        <p>
+            🤖 Ajuda Imunes AI Coder
+        </p>
+        <p>
+            Desenvolvido para incentivar o aprendizado
+            de programação e inteligência artificial.
+        </p>
     </div>
     """,
     unsafe_allow_html=True
 )
-
-
-
-
-
